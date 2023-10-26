@@ -19,7 +19,7 @@ describe('CommentRepositoryInterface', () => {
   describe('softDeleteById', () => {
     it('It throws an error when the method has not been implemented inside the child class', async () => {
       // Action & Assert
-      await expect(stubCommentRepository.softDeleteById({})).rejects.toThrowError(CommentRepositoryInterface.UNIMPLEMENTED_METHOD)
+      await expect(stubCommentRepository.softDeleteById('')).rejects.toThrowError(CommentRepositoryInterface.UNIMPLEMENTED_METHOD)
     })
   })
 
