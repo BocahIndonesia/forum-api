@@ -1,2 +1,7 @@
 node_modules
-coverage
+coverage/
+# postman
+# config
+# .env
+# .eslintrc.json
+package-lock.json
