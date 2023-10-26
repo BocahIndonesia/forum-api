@@ -1,6 +1,5 @@
 const UserRepositoryInterface = require('../../Domains/users/UserRepositoryInterface')
 const InvariantError = require('../../Commons/exceptions/InvariantError')
-const User = require('../../Domains/users/entities/User')
 
 module.exports = class UserRepositoryPostgres extends UserRepositoryInterface {
   constructor (dependencies) {
@@ -25,7 +24,7 @@ module.exports = class UserRepositoryPostgres extends UserRepositoryInterface {
       values: [id, username, fullname, password]
     })
 
-    return new User(users.rows[0])
+    return users.rows[0]
   }
 
   async verifyUsernameAvailibility (username) {
@@ -45,6 +44,6 @@ module.exports = class UserRepositoryPostgres extends UserRepositoryInterface {
 
     if (!users.rowCount) throw UserRepositoryPostgres.ERROR.USER_NOT_FOUND
 
-    return new User(users.rows[0])
+    return users.rows[0]
   }
 }

@@ -1,6 +1,4 @@
 const ReplyRepositoryInterface = require('../../Domains/replies/ReplyRepositoryInterface')
-const Reply = require('../../Domains/replies/entities/Reply')
-const ArrayItemReply = require('../../Domains/replies/entities/ArrayItemReply')
 const NotFoundError = require('../../Commons/exceptions/NotFoundError')
 const AuthorizationError = require('../../Commons/exceptions/AuthorizationError')
 
@@ -26,9 +24,8 @@ module.exports = class ReplyRepositoryPostgres extends ReplyRepositoryInterface 
       text: 'INSERT INTO "Reply" (id, content, owner, comment) VALUES ($1, $2, $3, $4) RETURNING *',
       values: [id, content, owner, comment]
     })
-    const reply = replies.rows[0]
 
-    return new Reply({ ...reply, isDelete: reply.is_delete })
+    return replies.rows[0]
   }
 
   async softDeleteById (id) {
@@ -63,7 +60,7 @@ module.exports = class ReplyRepositoryPostgres extends ReplyRepositoryInterface 
           R.id AS id,
           R.content AS content,
           R.date AS date,
-          R.is_delete AS "isDelete",
+          R.is_delete AS is_delete,
           U.username AS username
         FROM "Reply" AS R
         INNER JOIN "User" AS U
@@ -74,6 +71,6 @@ module.exports = class ReplyRepositoryPostgres extends ReplyRepositoryInterface 
       values: [commentId]
     })
 
-    return replies.rows.map(reply => new ArrayItemReply(reply))
+    return replies.rows
   }
 }

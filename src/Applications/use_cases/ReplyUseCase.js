@@ -50,7 +50,10 @@ module.exports = class ReplyUseCase {
 
     const reply = await this._replyRepository.add(newReply)
 
-    return new InfoReply(reply)
+    return new InfoReply({
+      ...reply,
+      isDelete: reply.is_delete
+    })
   }
 
   async delete (accessToken, payload) {

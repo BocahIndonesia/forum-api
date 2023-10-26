@@ -1,7 +1,6 @@
 const pool = require('../../database/postgres/pool')
 const UserTableHelper = require('../../../../tests/UserTableHelper')
 const InvariantError = require('../../../Commons/exceptions/InvariantError')
-const User = require('../../../Domains/users/entities/User')
 const UserRegistration = require('../../../Domains/users/entities/UserRegistration')
 const UserRepositoryPostgres = require('../UserRepositoryPostgres')
 
@@ -36,22 +35,6 @@ describe('UserRepositoryPostgres', () => {
       // Assert
       const users = await UserTableHelper.selectById(expectedId)
       expect(users).not.toBe(undefined)
-    })
-
-    it('It returns User object', async () => {
-      // Action
-      const user = await userRepository.register(userRegistration)
-
-      // Assert
-      expect(user).toStrictEqual(new User({
-        id: expectedId,
-        fullname: userRegistration.fullname,
-        username: userRegistration.username,
-        password: userRegistration.password
-      }))
-
-      // Clean-up
-      await UserTableHelper.clear()
     })
   })
 

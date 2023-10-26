@@ -5,10 +5,10 @@ module.exports = {
   async clear () {
     await pool.query('DELETE FROM "Thread" WHERE 1=1')
   },
-  async insert ({ id = 'thread-123', title = 'title example', body = 'body example', owner = 'user-123' }) {
+  async insert ({ id = 'thread-123', title = 'title example', body = 'body example', owner = 'user-123', date = new Date() }) {
     const threads = await pool.query({
-      text: 'INSERT INTO "Thread" (id, title, body, owner) VALUES ($1, $2, $3, $4) RETURNING *',
-      values: [id, title, body, owner]
+      text: 'INSERT INTO "Thread" (id, title, body, owner, date) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      values: [id, title, body, owner, date]
     })
 
     return threads.rows[0]

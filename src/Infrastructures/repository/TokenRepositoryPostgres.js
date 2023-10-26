@@ -1,4 +1,3 @@
-const RefreshToken = require('../../Domains/authentications/entities/RefreshToken')
 const TokenRepositoryInterface = require('../../Domains/authentications/TokenRepositoryInterface')
 const InvariantError = require('../../Commons/exceptions/InvariantError')
 
@@ -21,7 +20,7 @@ module.exports = class TokenRepositoryPostgres extends TokenRepositoryInterface 
       values: [token]
     })
 
-    return new RefreshToken({ ...result.rows[0] })
+    return result.rows[0]
   }
 
   async delete (token) {

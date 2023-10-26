@@ -45,7 +45,10 @@ module.exports = class CommentUseCase {
 
     const comment = await this._commentRepository.add(newComment)
 
-    return new InfoComment(comment)
+    return new InfoComment({
+      ...comment,
+      isDelete: comment.is_delete
+    })
   }
 
   async delete (accessToken, payload) {

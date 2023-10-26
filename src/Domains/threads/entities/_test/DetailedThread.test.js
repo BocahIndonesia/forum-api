@@ -9,7 +9,8 @@ describe('DetailedThread', () => {
       id: 'thread-123',
       body: 'body example',
       date: now,
-      username: 'user123'
+      username: 'user123',
+      comments: []
     }
     const payload2 = null
 
@@ -25,35 +26,48 @@ describe('DetailedThread', () => {
       title: 'title example',
       body: 'body example',
       date: now,
-      username: 'user123'
+      username: 'user123',
+      comments: []
     }
     const payload2 = {
       id: 'thread-123',
       title: 123,
       body: 'body example',
       date: now,
-      username: 'user123'
+      username: 'user123',
+      comments: []
     }
     const payload3 = {
       id: 'thread-123',
       title: 'title example',
       body: 123,
       date: now,
-      username: 'user123'
+      username: 'user123',
+      comments: []
     }
     const payload4 = {
       id: 'thread-123',
       title: 'title example',
       body: 'body example',
       date: 123,
-      username: 'user123'
+      username: 'user123',
+      comments: []
     }
     const payload5 = {
       id: 'thread-123',
       title: 'title example',
       body: 'body example',
       date: now,
-      username: 123
+      username: 123,
+      comments: []
+    }
+    const payload6 = {
+      id: 'thread-123',
+      title: 'title example',
+      body: 'body example',
+      date: now,
+      username: 'user123',
+      comments: 123
     }
 
     // Action & Assert
@@ -62,6 +76,7 @@ describe('DetailedThread', () => {
     expect(() => new DetailedThread(payload3)).toThrowError(DetailedThread.ERROR.INVALID_TYPE)
     expect(() => new DetailedThread(payload4)).toThrowError(DetailedThread.ERROR.INVALID_TYPE)
     expect(() => new DetailedThread(payload5)).toThrowError(DetailedThread.ERROR.INVALID_TYPE)
+    expect(() => new DetailedThread(payload6)).toThrowError(DetailedThread.ERROR.INVALID_TYPE)
   })
 
   it('Instantiate correctly on valid payload', () => {
@@ -71,11 +86,12 @@ describe('DetailedThread', () => {
       title: 'title example',
       body: 'body example',
       date: now,
-      username: 'user123'
+      username: 'user123',
+      comments: []
     }
 
     // Action
-    const { id, title, body, date, username } = new DetailedThread(payload)
+    const { id, title, body, date, username, comments } = new DetailedThread(payload)
 
     // Assert
     expect(id).toBe(payload.id)
@@ -83,5 +99,6 @@ describe('DetailedThread', () => {
     expect(body).toBe(payload.body)
     expect(date).toBe(payload.date.toISOString())
     expect(username).toBe(payload.username)
+    expect(comments).toEqual(payload.comments)
   })
 })

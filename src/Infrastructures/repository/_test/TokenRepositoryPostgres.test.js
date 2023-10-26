@@ -1,6 +1,5 @@
 const pool = require('../../database/postgres/pool')
 const TokenTableHelper = require('../../../../tests/TokenTableHelper')
-const RefreshToken = require('../../../Domains/authentications/entities/RefreshToken')
 const TokenRepositoryPostgres = require('../TokenRepositoryPostgres')
 
 describe('TokenRepositoryPostgres', () => {
@@ -16,27 +15,16 @@ describe('TokenRepositoryPostgres', () => {
   })
 
   describe('add', () => {
-    // Arrange
-    const expectedToken = new RefreshToken({
-      token: 'refresh-token'
-    })
-
     it('It persists token in the database', async () => {
+      // Arrange
+      const refreshToken = 'refresh-token'
+
       // Action
-      const token = await tokenRepository.add(expectedToken.token)
+      await tokenRepository.add(refreshToken)
 
       // Assert
-      const result = await TokenTableHelper.selectByToken(token.token)
+      const result = await TokenTableHelper.selectByToken(refreshToken)
       expect(result).not.toBe(undefined)
-    })
-
-    it('It returns RefreshToken object', async () => {
-      // Action
-      const token = await tokenRepository.add(expectedToken.token)
-
-      // Assert
-      expect(token).toBeInstanceOf(RefreshToken)
-      expect(token).toStrictEqual(expectedToken)
     })
   })
 

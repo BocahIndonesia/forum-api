@@ -40,17 +40,21 @@ describe('UserUseCase', () => {
       }
       const expectedUserProfile = new UserProfile({
         id: 'user-123',
-        username: payload.username,
-        fullname: payload.fullname
+        username: 'user123',
+        fullname: 'user test'
       })
-      const expectedHashedPassword = 'hash(password)'
-      const mockUserRegistration = new UserRegistration({
+      const userRegistration = new UserRegistration({
         ...payload,
-        password: expectedHashedPassword
+        password: 'hash(password)'
       })
 
-      mockPasswordHash.hash = jest.fn().mockImplementation((password) => Promise.resolve(expectedHashedPassword))
-      mockUserRepository.register = jest.fn().mockImplementation(() => Promise.resolve(expectedUserProfile))
+      mockPasswordHash.hash = jest.fn().mockImplementation(() => Promise.resolve('hash(password)'))
+      mockUserRepository.register = jest.fn().mockImplementation(() => Promise.resolve({
+        id: 'user-123',
+        fullname: 'user test',
+        username: 'user123',
+        password: 'hash(password)'
+      }))
       mockUserRepository.verifyUsernameAvailibility = jest.fn().mockImplementation(() => Promise.resolve())
 
       // Action
@@ -59,7 +63,7 @@ describe('UserUseCase', () => {
       // Assert
       expect(mockUserRepository.verifyUsernameAvailibility).toBeCalledWith(payload.username)
       expect(mockPasswordHash.hash).toBeCalledWith(payload.password)
-      expect(mockUserRepository.register).toBeCalledWith(mockUserRegistration)
+      expect(mockUserRepository.register).toBeCalledWith(userRegistration)
       expect(userProfile).toStrictEqual(expectedUserProfile)
     })
   })

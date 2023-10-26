@@ -3,11 +3,10 @@ const CommentTableHelper = require('../../../../tests/CommentTableHelper')
 const UserTableHelper = require('../../../../tests/UserTableHelper')
 const ThreadTableHelper = require('../../../../tests/ThreadTableHelper')
 const CommentRepositoryPostgres = require('../CommentRepositoryPostgres')
-const Comment = require('../../../Domains/comments/entities/Comment')
 const NewComment = require('../../../Domains/comments/entities/NewComment')
-const ArrayItemComment = require('../../../Domains/comments/entities/ArrayItemComment')
 const NotFoundError = require('../../../Commons/exceptions/NotFoundError')
 const AuthorizationError = require('../../../Commons/exceptions/AuthorizationError')
+const { expect } = require('@jest/globals')
 
 describe('CommentRepositoryPostgres', () => {
   // Arrange
@@ -41,37 +40,11 @@ describe('CommentRepositoryPostgres', () => {
       })
 
       // Action
-      const comment = await commentRepository.add(newComment)
+      await commentRepository.add(newComment)
 
       // Assert
-      const result = await CommentTableHelper.selectById(comment.id)
+      const result = await CommentTableHelper.selectById(expectedId)
       expect(result).not.toBe(undefined)
-    })
-
-    it('It returns Comment object', async () => {
-      // Action
-      const uploaderUser = await UserTableHelper.insert({ id: 'user-1', username: 'uplaoder' })
-      const { id: threadId } = await ThreadTableHelper.insert({ id: 'thread-1', owner: uploaderUser.id })
-      const commenterUser = await UserTableHelper.insert({ id: 'user-2', username: 'commenter' })
-
-      const newComment = new NewComment({
-        content: 'content example',
-        thread: threadId,
-        owner: commenterUser.id
-      })
-
-      const comment = await commentRepository.add(newComment)
-
-      // Assert
-      expect(comment).toBeInstanceOf(Comment)
-      expect(comment).toStrictEqual(new Comment({
-        id: expectedId,
-        content: newComment.content,
-        date: comment.date,
-        isDelete: false,
-        owner: newComment.owner,
-        thread: newComment.thread
-      }))
     })
   })
 
@@ -136,25 +109,47 @@ describe('CommentRepositoryPostgres', () => {
   })
 
   describe('selectByThreadId', () => {
-    it('It returns an array of object ArrayItemComment (the array can has 0 elements)', async () => {
+    it('It returns an array of object sorted by its date', async () => {
       // Arrange
+      const today = new Date()
+      const yesterday = new Date(new Date().setDate(today.getDate() - 1))
       const uploaderUser = await UserTableHelper.insert({ id: 'user-1', username: 'uplaoder' })
       const { id: threadId } = await ThreadTableHelper.insert({ id: 'thread-1', owner: uploaderUser.id })
-      const commenterUser = await UserTableHelper.insert({ id: 'user-2', username: 'commenter' })
-      const comment = await CommentTableHelper.insert({ owner: commenterUser.id, thread: threadId })
+      const commenterUser1 = await UserTableHelper.insert({ id: 'user-2', username: 'commenter' })
+      const commenterUser2 = await UserTableHelper.insert({ id: 'user-3', username: 'commenter2' })
+      const yesterdayComment = {
+        id: 'comment-1',
+        owner: commenterUser1.id,
+        content: 'yesterday comment',
+        thread: threadId,
+        date: yesterday
+      }
+      const todayComment = {
+        id: 'comment-2',
+        owner: commenterUser2.id,
+        content: 'yesterday comment',
+        thread: threadId,
+        date: today
+      }
+
+      await CommentTableHelper.insert(yesterdayComment)
+      await CommentTableHelper.insert(todayComment)
 
       // Action
       const comments = await commentRepository.selectByThreadId(threadId)
 
       // Assert
       expect(comments).toBeInstanceOf(Array)
-      expect(comments).toHaveLength(1)
-      expect(comments).toContainEqual(new ArrayItemComment({
-        ...comment,
-        isDelete: comment.is_delete,
-        username: commenterUser.username,
-        replies: []
-      }))
+      expect(comments).toHaveLength(2)
+      expect(comments[0].date <= comments[1].date).toBe(true)
+      expect(comments[0].id).toBe(yesterdayComment.id)
+      expect(comments[0].date).toEqual(yesterdayComment.date)
+      expect(comments[0].content).toBe(yesterdayComment.content)
+      expect(comments[0].username).toBe(commenterUser1.username)
+      expect(comments[1].id).toBe(todayComment.id)
+      expect(comments[1].date).toEqual(todayComment.date)
+      expect(comments[1].content).toBe(todayComment.content)
+      expect(comments[1].username).toBe(commenterUser2.username)
     })
   })
 })

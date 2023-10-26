@@ -3,7 +3,6 @@ const TokenRepositoryInterface = require('../../../Domains/authentications/Token
 const PasswordHashInterface = require('../../security/PasswordHashInterface')
 const TokenManagerInterface = require('../../security/TokenManagerInterface')
 const NewAuthentication = require('../../../Domains/authentications/entities/NewAuthentication')
-const User = require('../../../Domains/users/entities/User')
 const RefreshToken = require('../../../Domains/authentications/entities/RefreshToken')
 const AuthenticationUseCase = require('../AuthenticationUseCase')
 
@@ -81,21 +80,20 @@ describe('AuthenticationUseCase', () => {
         username: 'user123',
         password: 'supersecret'
       }
-      const expectedUser = new User({
-        id: 'user-123',
-        fullname: 'user test',
-        username: payload.username,
-        password: payload.password
-      })
       const expectedNewAuthentication = new NewAuthentication({
         accessToken: 'access-token',
         refreshToken: 'refresh-token'
       })
 
-      mockUserRepository.getByUsername = jest.fn().mockImplementation(() => Promise.resolve(expectedUser))
+      mockUserRepository.getByUsername = jest.fn().mockImplementation(() => Promise.resolve({
+        id: 'user-123',
+        fullname: 'user test',
+        username: 'user123',
+        password: 'hash(password)'
+      }))
       mockPasswordHash.compare = jest.fn().mockImplementation(() => Promise.resolve())
-      mockTokenManager.generateAccessToken = jest.fn().mockImplementation(() => expectedNewAuthentication.accessToken)
-      mockTokenManager.generateRefreshToken = jest.fn().mockImplementation(() => expectedNewAuthentication.refreshToken)
+      mockTokenManager.generateAccessToken = jest.fn().mockImplementation(() => 'access-token')
+      mockTokenManager.generateRefreshToken = jest.fn().mockImplementation(() => 'refresh-token')
       mockTokenRepository.add = jest.fn().mockImplementation(() => Promise.resolve())
 
       // Action
@@ -103,9 +101,9 @@ describe('AuthenticationUseCase', () => {
 
       // Assert
       expect(mockUserRepository.getByUsername).toBeCalledWith(payload.username)
-      expect(mockPasswordHash.compare).toBeCalledWith(payload.password, expectedUser.password)
-      expect(mockTokenManager.generateAccessToken).toBeCalledWith({ id: expectedUser.id, username: expectedUser.username })
-      expect(mockTokenManager.generateRefreshToken).toBeCalledWith({ id: expectedUser.id, username: expectedUser.username })
+      expect(mockPasswordHash.compare).toBeCalledWith(payload.password, 'hash(password)')
+      expect(mockTokenManager.generateAccessToken).toBeCalledWith({ id: 'user-123', username: payload.username })
+      expect(mockTokenManager.generateRefreshToken).toBeCalledWith({ id: 'user-123', username: payload.username })
       expect(mockTokenRepository.add).toBeCalledWith(expectedNewAuthentication.refreshToken)
       expect(newAuthentication).toStrictEqual(expectedNewAuthentication)
     })
@@ -132,13 +130,9 @@ describe('AuthenticationUseCase', () => {
   })
 
   describe('refreshAuthentication', () => {
-    const payload = {
-      refreshToken: 'refresh-token'
-    }
-
     it('It throws an error if payload is incompleted', async () => {
       // Arrange
-      delete payload.refreshToken
+      const payload = {}
 
       // Action & Assert
       await expect(authenticationUseCase.refreshAuthentication(payload)).rejects.toThrowError(RefreshToken.ERROR.INCOMPLETE_PAYLOAD)
@@ -146,7 +140,9 @@ describe('AuthenticationUseCase', () => {
 
     it('It throws an error if the refresh token is not a string', async () => {
       // Arrange
-      payload.refreshToken = 1234
+      const payload = {
+        refreshToken: 123
+      }
 
       // Action & Assert
       await expect(authenticationUseCase.refreshAuthentication(payload)).rejects.toThrowError(RefreshToken.ERROR.INVALID_TYPE)
@@ -154,17 +150,18 @@ describe('AuthenticationUseCase', () => {
 
     it('It orchestrates the refreshing authentication correctly', async () => {
       // Arrange
-      payload.refreshToken = 'refresh-token'
-      const expectedArtifactPayload = {
-        id: 'user-123',
-        username: 'user123'
+      const payload = {
+        refreshToken: 'refresh-token'
       }
       const expectedAccessToken = 'access-token'
 
       mockTokenRepository.verifyExistByToken = jest.fn().mockImplementation(() => Promise.resolve())
       mockTokenManager.verifyRefreshToken = jest.fn().mockImplementation(() => true)
-      mockTokenManager.generateAccessToken = jest.fn().mockImplementation(() => expectedAccessToken)
-      mockTokenManager.decodeToken = jest.fn().mockImplementation(() => expectedArtifactPayload)
+      mockTokenManager.generateAccessToken = jest.fn().mockImplementation(() => 'access-token')
+      mockTokenManager.decodeToken = jest.fn().mockImplementation(() => ({
+        id: 'user-123',
+        username: 'user123'
+      }))
 
       // Action
       const token = await authenticationUseCase.refreshAuthentication(payload)
@@ -173,7 +170,10 @@ describe('AuthenticationUseCase', () => {
       expect(mockTokenManager.verifyRefreshToken).toBeCalledWith(payload.refreshToken)
       expect(mockTokenRepository.verifyExistByToken).toBeCalledWith(payload.refreshToken)
       expect(mockTokenManager.decodeToken).toBeCalledWith(payload.refreshToken)
-      expect(mockTokenManager.generateAccessToken).toBeCalledWith(expectedArtifactPayload)
+      expect(mockTokenManager.generateAccessToken).toBeCalledWith({
+        id: 'user-123',
+        username: 'user123'
+      })
       expect(token).toStrictEqual(expectedAccessToken)
     })
   })

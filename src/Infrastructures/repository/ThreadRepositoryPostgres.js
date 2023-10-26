@@ -1,6 +1,4 @@
 const ThreadRepositoryInterface = require('../../Domains/threads/ThreadRepositoryInterface')
-const Thread = require('../../Domains/threads/entities/Thread')
-const DetailedThread = require('../../Domains/threads/entities/DetailedThread')
 const NotFoundError = require('../../Commons/exceptions/NotFoundError')
 
 module.exports = class ThreadRepositoryPostgres extends ThreadRepositoryInterface {
@@ -25,7 +23,7 @@ module.exports = class ThreadRepositoryPostgres extends ThreadRepositoryInterfac
       values: [id, title, body, owner]
     })
 
-    return new Thread(threads.rows[0])
+    return threads.rows[0]
   }
 
   async verifyExistById (id) {
@@ -56,6 +54,6 @@ module.exports = class ThreadRepositoryPostgres extends ThreadRepositoryInterfac
 
     if (!threads.rowCount) throw ThreadRepositoryPostgres.ERROR.THREAD_NOT_FOUND
 
-    return new DetailedThread(threads.rows[0])
+    return threads.rows[0]
   }
 }

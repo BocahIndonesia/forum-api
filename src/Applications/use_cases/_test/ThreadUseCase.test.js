@@ -3,7 +3,6 @@ const ThreadRepositoryInterface = require('../../../Domains/threads/ThreadReposi
 const CommentRepositoryInterface = require('../../../Domains/comments/CommentRepositoryInterface')
 const ReplyRepositoryInterface = require('../../../Domains/replies/ReplyRepositoryInterface')
 const TokenManagerInterface = require('../../security/TokenManagerInterface')
-const Thread = require('../../../Domains/threads/entities/Thread')
 const NewThread = require('../../../Domains/threads/entities/NewThread')
 const InfoThread = require('../../../Domains/threads/entities/InfoThread')
 const DetailedThread = require('../../../Domains/threads/entities/DetailedThread')
@@ -80,32 +79,27 @@ describe('ThreadUseCase', () => {
   describe('add', () => {
     it('It needs to orchestrate add thread correctly', async () => {
       // Arrange
+      const today = new Date()
       const accessToken = 'access-token'
       const payload = {
         threadTitle: 'title example',
         threadBody: 'body example'
       }
       const expectedNewThread = new NewThread({
-        title: payload.threadTitle,
-        body: payload.threadBody,
+        title: 'title example',
+        body: 'body example',
         owner: 'user-123'
-      })
-      const expectedThread = new Thread({
-        id: 'thread-123',
-        title: expectedNewThread.title,
-        body: expectedNewThread.body,
-        date: new Date(),
-        owner: 'user-123'
-      })
-      const expectedInfoThread = new InfoThread({
-        id: expectedThread.id,
-        title: expectedThread.title,
-        owner: expectedNewThread.owner
       })
 
       mockTokenManager.verifyAccessToken = jest.fn().mockImplementation(() => true)
-      mockTokenManager.decodeToken = jest.fn().mockImplementation(() => ({ id: expectedNewThread.owner }))
-      mockThreadRepository.add = jest.fn().mockImplementation(() => Promise.resolve(expectedThread))
+      mockTokenManager.decodeToken = jest.fn().mockImplementation(() => ({ id: 'user-123' }))
+      mockThreadRepository.add = jest.fn().mockImplementation(() => Promise.resolve({
+        id: 'thread-123',
+        title: 'title example',
+        body: 'body example',
+        owner: 'user-123',
+        date: today
+      }))
 
       // Action
       const infoThread = await threadUseCase.add(accessToken, payload)
@@ -114,56 +108,77 @@ describe('ThreadUseCase', () => {
       expect(mockTokenManager.verifyAccessToken).toBeCalledWith(accessToken)
       expect(mockTokenManager.decodeToken).toBeCalledWith(accessToken)
       expect(mockThreadRepository.add).toBeCalledWith(expectedNewThread)
-      expect(infoThread).toStrictEqual(expectedInfoThread)
+      expect(infoThread).toStrictEqual(new InfoThread({
+        id: 'thread-123',
+        title: 'title example',
+        owner: 'user-123'
+      }))
     })
   })
 
   describe('getDetailedById', () => {
     it('It needs to orchestrate getDetailedById thread correctly', async () => {
       // Arrange
-      const payload = {
-        threadId: 'thread-123'
-      }
+      const today = new Date()
+      const threadId = 'thread-123'
+      const commentId = 'comment-123'
+      const payload = { threadId }
       const expectedDetailedThread = new DetailedThread({
-        id: payload.threadId,
+        id: threadId,
         title: 'title example',
         body: 'body example',
-        date: new Date(),
-        username: 'user123'
-      })
-      const expectedArrayItemReply = new ArrayItemReply({
-        id: 'reply-123',
-        content: 'content example',
-        username: 'user123',
-        date: new Date(),
-        isDelete: false
-      })
-      const expectedArrayItemComment = new ArrayItemComment({
-        id: 'comment-123',
-        content: 'content example',
-        username: 'user222',
-        date: new Date(),
-        isDelete: false,
-        replies: [expectedArrayItemReply]
+        date: today,
+        username: 'uploader',
+        comments: [new ArrayItemComment({
+          id: commentId,
+          content: 'comment example',
+          username: 'commenter',
+          date: today,
+          isDelete: false,
+          replies: [new ArrayItemReply({
+            id: 'reply-123',
+            content: 'reply example',
+            username: 'replier',
+            date: today,
+            isDelete: false
+          })]
+        })]
       })
 
       mockThreadRepository.verifyExistById = jest.fn().mockImplementation(() => Promise.resolve())
-      mockThreadRepository.getDetailedById = jest.fn().mockImplementation(() => Promise.resolve(expectedDetailedThread))
-      mockCommentRepository.selectByThreadId = jest.fn().mockImplementation(() => Promise.resolve([expectedArrayItemComment]))
-      mockReplyRepository.selectByCommentId = jest.fn().mockImplementation(() => Promise.resolve([expectedArrayItemReply]))
+      mockThreadRepository.getDetailedById = jest.fn().mockImplementation(() => Promise.resolve({
+        id: threadId,
+        title: 'title example',
+        body: 'body example',
+        date: today,
+        username: 'uploader'
+      }))
+      mockCommentRepository.selectByThreadId = jest.fn().mockImplementation(() => Promise.resolve([{
+        id: commentId,
+        content: 'comment example',
+        username: 'commenter',
+        thread: threadId,
+        date: today,
+        is_delete: false
+      }]))
+      mockReplyRepository.selectByCommentId = jest.fn().mockImplementation(() => Promise.resolve([{
+        id: 'reply-123',
+        content: 'reply example',
+        username: 'replier',
+        comment: commentId,
+        date: today,
+        is_delete: false
+      }]))
 
       // Action
-      const detailThread = await threadUseCase.getDetailedById(payload)
+      const detailedThread = await threadUseCase.getDetailedById(payload)
 
       // Assert
-      expect(mockThreadRepository.verifyExistById).toBeCalledWith(payload.threadId)
-      expect(mockThreadRepository.getDetailedById).toBeCalledWith(payload.threadId)
-      expect(mockCommentRepository.selectByThreadId).toBeCalledWith(payload.threadId)
-      expect(mockReplyRepository.selectByCommentId).toHaveBeenCalled()
-      expect(detailThread).toEqual({
-        ...expectedDetailedThread,
-        comments: [expectedArrayItemComment]
-      })
+      expect(mockThreadRepository.verifyExistById).toBeCalledWith(threadId)
+      expect(mockThreadRepository.getDetailedById).toBeCalledWith(threadId)
+      expect(mockCommentRepository.selectByThreadId).toBeCalledWith(threadId)
+      expect(mockReplyRepository.selectByCommentId).toBeCalledWith(commentId)
+      expect(detailedThread).toStrictEqual(expectedDetailedThread)
     })
   })
 })

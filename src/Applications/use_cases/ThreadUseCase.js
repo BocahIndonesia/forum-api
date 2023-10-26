@@ -4,6 +4,9 @@ const ThreadRepositoryInterface = require('../../Domains/threads/ThreadRepositor
 const CommentRepositoryInterface = require('../../Domains/comments/CommentRepositoryInterface')
 const ReplyRepositoryInterface = require('../../Domains/replies/ReplyRepositoryInterface')
 const TokenManagerInterface = require('../security/TokenManagerInterface')
+const ArrayItemComment = require('../../Domains/comments/entities/ArrayItemComment')
+const ArrayItemReply = require('../../Domains/replies/entities/ArrayItemReply')
+const DetailedThread = require('../../Domains/threads/entities/DetailedThread')
 
 module.exports = class ThreadUseCase {
   constructor (dependencies) {
@@ -55,13 +58,20 @@ module.exports = class ThreadUseCase {
 
     await this._threadRepository.verifyExistById(threadId)
     const detailedThread = await this._threadRepository.getDetailedById(threadId)
-    const comments = await this._commentRepository.selectByThreadId(threadId)
+    const listComment = await this._commentRepository.selectByThreadId(threadId)
+    const comments = []
 
-    for (const comment of comments) {
-      comment.replies = await this._replyRepository.selectByCommentId(comment.id)
+    for (const comment of listComment) {
+      const replies = await this._replyRepository.selectByCommentId(comment.id)
+
+      comments.push(new ArrayItemComment({
+        ...comment,
+        isDelete: comment.is_delete,
+        replies: replies.map(reply => new ArrayItemReply({ ...reply, isDelete: reply.is_delete }))
+      }))
     }
 
-    return ({
+    return new DetailedThread({
       ...detailedThread,
       comments
     })

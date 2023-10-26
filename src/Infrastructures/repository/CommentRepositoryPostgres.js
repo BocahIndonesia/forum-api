@@ -1,6 +1,4 @@
 const CommentRepositoryInterface = require('../../Domains/comments/CommentRepositoryInterface')
-const Comment = require('../../Domains/comments/entities/Comment')
-const ArrayItemComment = require('../../Domains/comments/entities/ArrayItemComment')
 const NotFoundError = require('../../Commons/exceptions/NotFoundError')
 const AuthorizationError = require('../../Commons/exceptions/AuthorizationError')
 
@@ -26,9 +24,8 @@ module.exports = class CommentRepositoryPostgres extends CommentRepositoryInterf
       text: 'INSERT INTO "Comment" (id, content, owner, thread) VALUES ($1, $2, $3, $4) RETURNING *',
       values: [id, content, owner, thread]
     })
-    const comment = comments.rows[0]
 
-    return new Comment({ ...comment, isDelete: comment.is_delete })
+    return comments.rows[0]
   }
 
   async softDeleteById (id) {
@@ -61,9 +58,9 @@ module.exports = class CommentRepositoryPostgres extends CommentRepositoryInterf
       text: `
         SELECT
           C.id AS id,
-          C.date AS date,
           C.content AS content,
-          C.is_delete AS "isDelete",
+          C.date AS date,
+          C.is_delete AS is_delete,
           U.username AS username
         FROM "Comment" AS C
         INNER JOIN "User" AS U
@@ -74,6 +71,6 @@ module.exports = class CommentRepositoryPostgres extends CommentRepositoryInterf
       values: [threadId]
     })
 
-    return comments.rows.map(comment => new ArrayItemComment({ ...comment, replies: [] }))
+    return comments.rows
   }
 }

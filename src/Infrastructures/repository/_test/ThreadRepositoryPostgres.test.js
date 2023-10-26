@@ -1,11 +1,10 @@
 const pool = require('../../database/postgres/pool')
 const ThreadTableHelper = require('../../../../tests/ThreadTableHelper')
 const UserTableHelper = require('../../../../tests/UserTableHelper')
-const Thread = require('../../../Domains/threads/entities/Thread')
 const NewThread = require('../../../Domains/threads/entities/NewThread')
 const ThreadRepositoryPostgres = require('../ThreadRepositoryPostgres')
 const NotFoundError = require('../../../Commons/exceptions/NotFoundError')
-const DetailedThread = require('../../../Domains/threads/entities/DetailedThread')
+const { expect } = require('@jest/globals')
 
 describe('ThreadRepositoryPostgres', () => {
   // Arrange
@@ -25,44 +24,21 @@ describe('ThreadRepositoryPostgres', () => {
   })
 
   describe('add', () => {
-    // Arrange
-    let newThread
-
-    beforeEach(async () => {
+    it('It persists thread in the database', async () => {
+      // Arrange
       const uploaderUser = await UserTableHelper.insert({ id: 'user-1', username: 'uploader' })
-      newThread = new NewThread({
+      const newThread = new NewThread({
         title: 'title example',
         body: 'body example',
         owner: uploaderUser.id
       })
-    })
 
-    afterEach(async () => {
-      await ThreadTableHelper.clear()
-    })
-
-    it('It persists thread in the database', async () => {
       // Action
-      const thread = await threadRepository.add(newThread)
+      await threadRepository.add(newThread)
 
       // Assert
-      const result = await ThreadTableHelper.selectById(thread.id)
+      const result = await ThreadTableHelper.selectById(expectedId)
       expect(result).not.toBe(undefined)
-    })
-
-    it('It returns Thread object', async () => {
-      // Action
-      const thread = await threadRepository.add(newThread)
-
-      // Assert
-      expect(thread).toBeInstanceOf(Thread)
-      expect(thread).toStrictEqual(new Thread({
-        id: expectedId,
-        title: newThread.title,
-        body: newThread.body,
-        date: thread.date,
-        owner: newThread.owner
-      }))
     })
   })
 
@@ -89,7 +65,7 @@ describe('ThreadRepositoryPostgres', () => {
       await expect(threadRepository.getDetailedById('doesnotexist')).rejects.toThrowError(NotFoundError)
     })
 
-    it('It returns DetailedThread object', async () => {
+    it('It returns a detail info of a thread', async () => {
       // Arrange
       const uploaderUser = await UserTableHelper.insert({ username: 'uploader' })
       const { id: threadId, title, body, date } = await ThreadTableHelper.insert({ owenr: uploaderUser.id })
@@ -98,14 +74,11 @@ describe('ThreadRepositoryPostgres', () => {
       const detailedThread = await threadRepository.getDetailedById(threadId)
 
       // Assert
-      expect(detailedThread).toBeInstanceOf(DetailedThread)
-      expect(detailedThread).toStrictEqual(new DetailedThread({
-        id: threadId,
-        title,
-        body,
-        date,
-        username: uploaderUser.username
-      }))
+      expect(detailedThread.id).toBe(threadId)
+      expect(detailedThread.title).toBe(title)
+      expect(detailedThread.body).toBe(body)
+      expect(detailedThread.date).toEqual(date)
+      expect(detailedThread.username).toBe(uploaderUser.username)
     })
   })
 })

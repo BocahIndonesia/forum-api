@@ -2,7 +2,6 @@ const CommentUseCase = require('../../../Applications/use_cases/CommentUseCase')
 const CommentRepositoryInterface = require('../../../Domains/comments/CommentRepositoryInterface')
 const ThreadRepositoryInterface = require('../../../Domains/threads/ThreadRepositoryInterface')
 const TokenManagerInterface = require('../../security/TokenManagerInterface')
-const Comment = require('../../../Domains/comments/entities/Comment')
 const NewComment = require('../../../Domains/comments/entities/NewComment')
 const InfoComment = require('../../../Domains/comments/entities/InfoComment')
 
@@ -63,29 +62,34 @@ describe('CommentUseCase', () => {
   describe('add', () => {
     it('It needs to orchestrate add comment correctly', async () => {
       // Arrange
+      const today = new Date()
       const accessToken = 'access-token'
       const payload = {
-        commentContent: 'content example',
+        commentContent: 'comment example',
         threadId: 'thread-123'
       }
       const expectedNewComment = new NewComment({
-        content: payload.commentContent,
+        content: 'comment example',
         owner: 'user-123',
-        thread: payload.threadId
+        thread: 'thread-123'
       })
-      const expectedComment = new Comment({
+      const expectedInfoComment = new InfoComment({
         id: 'comment-123',
-        owner: expectedNewComment.owner,
-        content: expectedNewComment.content,
-        thread: expectedNewComment.thread,
-        date: new Date(),
-        isDelete: false
+        content: 'comment example',
+        owner: 'user-123'
       })
 
       mockThreadRepository.verifyExistById = jest.fn().mockImplementation(() => Promise.resolve())
       mockTokenManager.verifyAccessToken = jest.fn().mockImplementation(() => true)
-      mockTokenManager.decodeToken = jest.fn().mockImplementation(() => ({ id: expectedNewComment.owner }))
-      mockCommentRepository.add = jest.fn().mockImplementation(() => Promise.resolve(expectedComment))
+      mockTokenManager.decodeToken = jest.fn().mockImplementation(() => ({ id: 'user-123', username: 'user123' }))
+      mockCommentRepository.add = jest.fn().mockImplementation(() => Promise.resolve({
+        id: 'comment-123',
+        owner: 'user-123',
+        content: 'comment example',
+        thread: 'thread-123',
+        date: today,
+        is_delete: false
+      }))
 
       // Action
       const infoComment = await commentUseCase.add(accessToken, payload)
@@ -95,11 +99,7 @@ describe('CommentUseCase', () => {
       expect(mockTokenManager.verifyAccessToken).toBeCalledWith(accessToken)
       expect(mockTokenManager.decodeToken).toBeCalledWith(accessToken)
       expect(mockCommentRepository.add).toBeCalledWith(expectedNewComment)
-      expect(infoComment).toStrictEqual(new InfoComment({
-        id: expectedComment.id,
-        content: expectedComment.content,
-        owner: expectedComment.owner
-      }))
+      expect(infoComment).toStrictEqual(expectedInfoComment)
     })
   })
 
@@ -107,7 +107,6 @@ describe('CommentUseCase', () => {
     it('It needs to orchestrate add comment correctly', async () => {
       // Arrange
       const accessToken = 'access-token'
-      const userId = 'user-123'
       const payload = {
         commentId: 'comment-123',
         threadId: 'thread-123'
@@ -115,7 +114,7 @@ describe('CommentUseCase', () => {
 
       mockThreadRepository.verifyExistById = jest.fn().mockImplementation(() => Promise.resolve())
       mockTokenManager.verifyAccessToken = jest.fn().mockImplementation(() => true)
-      mockTokenManager.decodeToken = jest.fn().mockImplementation(() => ({ id: userId }))
+      mockTokenManager.decodeToken = jest.fn().mockImplementation(() => ({ id: 'user-123' }))
       mockCommentRepository.verifyExistById = jest.fn().mockImplementation(() => Promise.resolve())
       mockCommentRepository.verifyAccess = jest.fn().mockImplementation(() => Promise.resolve())
       mockCommentRepository.softDeleteById = jest.fn().mockImplementation(() => Promise.resolve())
@@ -128,7 +127,7 @@ describe('CommentUseCase', () => {
       expect(mockTokenManager.verifyAccessToken).toBeCalledWith(accessToken)
       expect(mockTokenManager.decodeToken).toBeCalledWith(accessToken)
       expect(mockCommentRepository.verifyExistById).toBeCalledWith(payload.commentId)
-      expect(mockCommentRepository.verifyAccess).toBeCalledWith({ commentId: payload.commentId, userId })
+      expect(mockCommentRepository.verifyAccess).toBeCalledWith({ commentId: payload.commentId, userId: 'user-123' })
       expect(mockCommentRepository.softDeleteById).toBeCalledWith(payload.commentId)
     })
   })
