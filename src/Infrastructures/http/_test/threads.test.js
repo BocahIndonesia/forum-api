@@ -5,10 +5,10 @@ const { translate } = require('../../../Commons/exceptions/DomainErrorTranslator
 const UserTableHelper = require('../../../../tests/UserTableHelper')
 const TokenTableHelper = require('../../../../tests/TokenTableHelper')
 const ThreadTableHelper = require('../../../../tests/ThreadTableHelper')
+const CommentTableHelper = require('../../../../tests/CommentTableHelper')
 const NewThread = require('../../../Domains/threads/entities/NewThread')
 const TokenManagerInterface = require('../../../Applications/security/TokenManagerInterface')
 const JwtManager = require('../../security/JwtManager')
-const CommentTableHelper = require('../../../../tests/CommentTableHelper')
 const ArrayItemComment = require('../../../Domains/comments/entities/ArrayItemComment')
 
 describe('threads', () => {
@@ -192,13 +192,15 @@ describe('threads', () => {
           ...comment1,
           username: commenter1.username,
           isDelete: comment1.is_delete,
-          replies: []
+          replies: [],
+          likeCount: 0
         }),
         new ArrayItemComment({
           ...comment2,
           username: commenter2.username,
           isDelete: comment2.is_delete,
-          replies: []
+          replies: [],
+          likeCount: 0
         })
       ].sort(comment => comment.date))
 

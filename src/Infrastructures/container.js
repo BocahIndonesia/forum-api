@@ -69,6 +69,8 @@ const CommentRepositoryInterface = require('../Domains/comments/CommentRepositor
 const CommentRepositoryPostgres = require('../Infrastructures/repository/CommentRepositoryPostgres')
 const ReplyRepositoryInterface = require('../Domains/replies/ReplyRepositoryInterface')
 const ReplyRepositoryPostgres = require('../Infrastructures/repository/ReplyRepositoryPostgres')
+const LikeRepositoryInterface = require('../Domains/likes/LikeRepositoryInterface')
+const LikeRepositoryPostgres = require('../Infrastructures/repository/LikeRepositoryPostgres')
 
 container.register([
   {
@@ -151,6 +153,19 @@ container.register([
         }
       ]
     }
+  },
+  {
+    key: LikeRepositoryInterface.name,
+    Class: LikeRepositoryPostgres,
+    parameter: {
+      injectType: 'destructuring',
+      dependencies: [
+        {
+          name: 'pool',
+          concrete: pool
+        }
+      ]
+    }
   }
 ])
 
@@ -160,6 +175,7 @@ const AuthenticationUseCase = require('../Applications/use_cases/AuthenticationU
 const ThreadUseCase = require('../Applications/use_cases/ThreadUseCase')
 const CommentUseCase = require('../Applications/use_cases/CommentUseCase')
 const ReplyUseCase = require('../Applications/use_cases/ReplyUseCase')
+const LikeUseCase = require('../Applications/use_cases/LikeUseCase')
 
 container.register([
   {
@@ -223,6 +239,10 @@ container.register([
           internal: ReplyRepositoryInterface.name
         },
         {
+          name: 'likeRepository',
+          internal: LikeRepositoryInterface.name
+        },
+        {
           name: 'tokenManager',
           internal: TokenManagerInterface.name
         }
@@ -259,6 +279,31 @@ container.register([
         {
           name: 'replyRepository',
           internal: ReplyRepositoryInterface.name
+        },
+        {
+          name: 'commentRepository',
+          internal: CommentRepositoryInterface.name
+        },
+        {
+          name: 'threadRepository',
+          internal: ThreadRepositoryInterface.name
+        },
+        {
+          name: 'tokenManager',
+          internal: TokenManagerInterface.name
+        }
+      ]
+    }
+  },
+  {
+    key: LikeUseCase.name,
+    Class: LikeUseCase,
+    parameter: {
+      injectType: 'destructuring',
+      dependencies: [
+        {
+          name: 'likeRepository',
+          internal: LikeRepositoryInterface.name
         },
         {
           name: 'commentRepository',

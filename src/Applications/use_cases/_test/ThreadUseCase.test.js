@@ -2,6 +2,7 @@ const ThreadUseCase = require('../ThreadUseCase')
 const ThreadRepositoryInterface = require('../../../Domains/threads/ThreadRepositoryInterface')
 const CommentRepositoryInterface = require('../../../Domains/comments/CommentRepositoryInterface')
 const ReplyRepositoryInterface = require('../../../Domains/replies/ReplyRepositoryInterface')
+const LikeRepositoryInterface = require('../../../Domains/likes/LikeRepositoryInterface')
 const TokenManagerInterface = require('../../security/TokenManagerInterface')
 const NewThread = require('../../../Domains/threads/entities/NewThread')
 const InfoThread = require('../../../Domains/threads/entities/InfoThread')
@@ -20,6 +21,9 @@ describe('ThreadUseCase', () => {
   class MockReplyRepository extends ReplyRepositoryInterface {}
   const mockReplyRepository = new MockReplyRepository()
 
+  class MockLikeRepository extends LikeRepositoryInterface {}
+  const mockLikeRepository = new MockLikeRepository()
+
   class MockTokenManager extends TokenManagerInterface {}
   const mockTokenManager = new MockTokenManager()
 
@@ -27,6 +31,7 @@ describe('ThreadUseCase', () => {
     threadRepository: mockThreadRepository,
     replyRepository: mockReplyRepository,
     commentRepository: mockCommentRepository,
+    likeRepository: mockLikeRepository,
     tokenManager: mockTokenManager
   })
 
@@ -39,6 +44,7 @@ describe('ThreadUseCase', () => {
         commentRepository: mockCommentRepository,
         replyRepository: mockReplyRepository,
         threadRepository: mockThreadRepository,
+        likeRepository: mockLikeRepository,
         tokenManager: mockTokenManager
       }
     })
@@ -65,6 +71,14 @@ describe('ThreadUseCase', () => {
 
       // Action & Assert
       expect(() => new ThreadUseCase(dependencies)).toThrowError(ThreadUseCase.ERROR.INVALID_REPLY_REPOSITORY)
+    })
+
+    it('It throws an error if likeRepository does not implement LikeRepositoryInterface', () => {
+      // Arrange
+      dependencies.likeRepository = {}
+
+      // Action & Assert
+      expect(() => new ThreadUseCase(dependencies)).toThrowError(ThreadUseCase.ERROR.INVALID_LIKE_REPOSITORY)
     })
 
     it('It throws an error if tokenManager does not implement TokenManagerInterface', () => {
@@ -141,7 +155,8 @@ describe('ThreadUseCase', () => {
             username: 'replier',
             date: today,
             isDelete: false
-          })]
+          })],
+          likeCount: 1
         })]
       })
 
@@ -169,6 +184,10 @@ describe('ThreadUseCase', () => {
         date: today,
         is_delete: false
       }]))
+      mockLikeRepository.selectByCommentId = jest.fn().mockImplementation(() => Promise.resolve([{
+        comment: 'comment-123',
+        owner: 'user-2'
+      }]))
 
       // Action
       const detailedThread = await threadUseCase.getDetailedById(payload)
@@ -178,6 +197,7 @@ describe('ThreadUseCase', () => {
       expect(mockThreadRepository.getDetailedById).toBeCalledWith(threadId)
       expect(mockCommentRepository.selectByThreadId).toBeCalledWith(threadId)
       expect(mockReplyRepository.selectByCommentId).toBeCalledWith(commentId)
+      expect(mockLikeRepository.selectByCommentId).toBeCalledWith(commentId)
       expect(detailedThread).toStrictEqual(expectedDetailedThread)
     })
   })

@@ -23,10 +23,10 @@ module.exports = {
     })
     return result.rows[0]
   },
-  async deleteByUsername (username) {
+  async deleteById (id) {
     await pool.query({
-      text: 'DELETE FROM "User" WHERE username = $1',
-      values: [username]
+      text: 'DELETE FROM "User" WHERE id = $1',
+      values: [id]
     })
   }
 }

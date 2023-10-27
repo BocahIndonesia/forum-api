@@ -1,12 +1,13 @@
 module.exports = class ArrayItemComment {
   constructor (payload) {
-    const { id, username, date, content, isDelete, replies } = ArrayItemComment.preparePayload(payload)
+    const { id, username, date, content, isDelete, replies, likeCount } = ArrayItemComment.preparePayload(payload)
 
     this.id = id
     this.username = username
     this.date = date.toISOString()
     this.content = isDelete ? '**komentar telah dihapus**' : content
     this.replies = replies
+    this.likeCount = likeCount
   }
 
   static ERROR = {
@@ -15,11 +16,11 @@ module.exports = class ArrayItemComment {
   }
 
   static preparePayload (payload) {
-    if (payload === null || [payload.id, payload.content, payload.isDelete, payload.username, payload.date, payload.replies].includes(undefined)) {
+    if (payload === null || [payload.id, payload.content, payload.isDelete, payload.username, payload.date, payload.replies, payload.likeCount].includes(undefined)) {
       throw ArrayItemComment.ERROR.INCOMPLETE_PAYLOAD
     }
 
-    const { id, username, date, content, isDelete, replies } = payload
+    const { id, username, date, content, isDelete, replies, likeCount } = payload
 
     if (typeof id !== 'string') throw ArrayItemComment.ERROR.INVALID_TYPE
     if (typeof username !== 'string') throw ArrayItemComment.ERROR.INVALID_TYPE
@@ -27,6 +28,7 @@ module.exports = class ArrayItemComment {
     if (typeof content !== 'string') throw ArrayItemComment.ERROR.INVALID_TYPE
     if (typeof isDelete !== 'boolean') throw ArrayItemComment.ERROR.INVALID_TYPE
     if (!Array.isArray(replies)) throw ArrayItemComment.ERROR.INVALID_TYPE
+    if (typeof likeCount !== 'number') throw ArrayItemComment.ERROR.INVALID_TYPE
 
     return payload
   }

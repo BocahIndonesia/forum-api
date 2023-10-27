@@ -3,6 +3,7 @@ const InfoThread = require('../../Domains/threads/entities/InfoThread')
 const ThreadRepositoryInterface = require('../../Domains/threads/ThreadRepositoryInterface')
 const CommentRepositoryInterface = require('../../Domains/comments/CommentRepositoryInterface')
 const ReplyRepositoryInterface = require('../../Domains/replies/ReplyRepositoryInterface')
+const LikeRepositoryInterface = require('../../Domains/likes/LikeRepositoryInterface')
 const TokenManagerInterface = require('../security/TokenManagerInterface')
 const ArrayItemComment = require('../../Domains/comments/entities/ArrayItemComment')
 const ArrayItemReply = require('../../Domains/replies/entities/ArrayItemReply')
@@ -10,11 +11,12 @@ const DetailedThread = require('../../Domains/threads/entities/DetailedThread')
 
 module.exports = class ThreadUseCase {
   constructor (dependencies) {
-    const { threadRepository, commentRepository, replyRepository, tokenManager } = ThreadUseCase.prepareDependencies(dependencies)
+    const { threadRepository, commentRepository, replyRepository, likeRepository, tokenManager } = ThreadUseCase.prepareDependencies(dependencies)
 
     this._threadRepository = threadRepository
     this._commentRepository = commentRepository
     this._replyRepository = replyRepository
+    this._likeRepository = likeRepository
     this._tokenManager = tokenManager
   }
 
@@ -22,12 +24,14 @@ module.exports = class ThreadUseCase {
     INVALID_THREAD_REPOSITORY: new Error('THREAD_USE_CASE.DOES_NOT_IMPLEMENT_THREAD_REPOSITORY_INTERFACE'),
     INVALID_COMMENT_REPOSITORY: new Error('THREAD_USE_CASE.DOES_NOT_IMPLEMENT_COMMENT_REPOSITORY_INTERFACE'),
     INVALID_REPLY_REPOSITORY: new Error('THREAD_USE_CASE.DOES_NOT_IMPLEMENT_REPLY_REPOSITORY_INTERFACE'),
+    INVALID_LIKE_REPOSITORY: new Error('THREAD_USE_CASE.DOES_NOT_IMPLEMENT_LIKE_REPOSITORY_INTERFACE'),
     INVALID_TOKEN_MANAGER: new Error('THREAD_USE_CASE.DOES_NOT_IMPLEMENT_TOKEN_MANAGER_INTERFACE')
   }
 
   static prepareDependencies (dependencies) {
-    const { threadRepository, commentRepository, replyRepository, tokenManager } = dependencies
+    const { threadRepository, commentRepository, replyRepository, likeRepository, tokenManager } = dependencies
 
+    if (!(likeRepository instanceof LikeRepositoryInterface)) throw ThreadUseCase.ERROR.INVALID_LIKE_REPOSITORY
     if (!(threadRepository instanceof ThreadRepositoryInterface)) throw ThreadUseCase.ERROR.INVALID_THREAD_REPOSITORY
     if (!(commentRepository instanceof CommentRepositoryInterface)) throw ThreadUseCase.ERROR.INVALID_COMMENT_REPOSITORY
     if (!(replyRepository instanceof ReplyRepositoryInterface)) throw ThreadUseCase.ERROR.INVALID_REPLY_REPOSITORY
@@ -63,11 +67,13 @@ module.exports = class ThreadUseCase {
 
     for (const comment of listComment) {
       const replies = await this._replyRepository.selectByCommentId(comment.id)
+      const likes = await this._likeRepository.selectByCommentId(comment.id)
 
       comments.push(new ArrayItemComment({
         ...comment,
         isDelete: comment.is_delete,
-        replies: replies.map(reply => new ArrayItemReply({ ...reply, isDelete: reply.is_delete }))
+        replies: replies.map(reply => new ArrayItemReply({ ...reply, isDelete: reply.is_delete })),
+        likeCount: likes.length
       }))
     }
 

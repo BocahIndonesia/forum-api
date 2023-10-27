@@ -5,6 +5,7 @@ const authentications = require('../../Interfaces/http/api/authentications')
 const threads = require('../../Interfaces/http/api/threads')
 const comments = require('../../Interfaces/http/api/comments')
 const replies = require('../../Interfaces/http/api/replies')
+const likes = require('../../Interfaces/http/api/likes')
 const ClientErrorAbstract = require('../../Commons/exceptions/ClientErrorAbstract')
 const DomainErrorTranslator = require('../../Commons/exceptions/DomainErrorTranslator')
 
@@ -33,6 +34,10 @@ async function createServer (container) {
     },
     {
       plugin: replies,
+      options: { container }
+    },
+    {
+      plugin: likes,
       options: { container }
     }
   ])
